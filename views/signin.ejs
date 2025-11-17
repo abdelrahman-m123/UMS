@@ -62,7 +62,7 @@
         const token = data.accessToken;
         const payloadBase64 = token.split('.')[1];
         const decodedToken = JSON.parse(atob(payloadBase64));
-
+                                                                                            
         console.log(decodedToken)
         alert("fasdf",decodedToken)
         alert(JSON.stringify(decodedToken, null, 2));

@@ -9,6 +9,8 @@ const middleware = require("../middlewares/auth-middleware");
 router.post('/signup',authController.student_signup);
 router.get("/signup",authController.signup_get);
 
+router.post('/addUser',middleware.authMiddleWare,authController.add_user);
+
 router.post('/login',authController.student_login);
 router.get("/login",authController.login_get);
 

@@ -7,7 +7,46 @@ const transport = require('../middlewares/sendMail')
 const {doHash,doPassValidation,hmacProcess} = require("../utils/hashing");
 const jwt_secret_key = process.env.jwt_secret_key || "elfeel";
 const jwt = require('jsonwebtoken');
+const { json } = require('body-parser');
 
+
+exports.add_user = async (req,res)=>{
+   user_adder_role = req.userInfo.role;
+   console.log(user_adder_role)
+   if (user_adder_role === 'super_admin'){
+   
+   const db = await connectToDB();
+   const {username,email,password,role} = req.body;
+
+   const {error,value} = signupSchema.validate({email,password});
+   const hashedPassword = await doHash(password,12);
+   if(error){
+   return res.status(401).json({success:false, message:"error in validating signing up",error:error.details[0].message});
+   }
+  
+   const result = await db.request().query(`SELECT * FROM Student WHERE stu_email = '${email}'`);
+    
+   if (result.recordset.length !== 0 ) {
+        return res.status(401).json({ message:'user already exists' });
+    }
+   else{
+   if(role == 'student'){
+   q = `insert into Student (stu_name,stu_email,password) values('${username}', '${email}', '${hashedPassword}');`;
+        await db.request().query(q);
+
+   }else if (role =='TA' || role == 'Doctor' || role == 'admin'){
+    q = `insert into Staff  (role, staff_name,staff_email,password) values ('${role}','${username}', '${email}', '${hashedPassword}')`;
+        await db.request().query(q);
+   }
+
+   return res.status(200).json({"success":true})
+}
+   }
+else{
+    return res.status(401).json({"success":false,message: "Un authorized , U have to be super admin"});
+}
+
+}
 
 
 exports.student_signup = async (req,res)=>{
@@ -21,7 +60,6 @@ exports.student_signup = async (req,res)=>{
 		return res.status(401).json({success:false, message:"error in validating signing up",error:error.details[0].message});
 	    }
 
-  
     const result = await db.request().query(`SELECT * FROM Student WHERE stu_email = '${email}'`);
     
     if (result.recordset.length !== 0 ) {
@@ -44,7 +82,6 @@ exports.student_signup = async (req,res)=>{
 }
 
 exports.signup_get = (req,res)=>{
-
 	//res.json({message:"hiiiiiiiiiiiii"});
      res.render('signup')
 }
@@ -57,6 +94,7 @@ exports.student_login = async (req,res)=>{
 
        const result = await db.request()
        .query(`SELECT * FROM Student WHERE stu_email = '${email}'`);
+
 
        if (result.recordset.length === 0) {
         return res.status(404).json({ message: 'Student not found' });
