@@ -16,16 +16,19 @@ route.get("/removeCourse",/*middleware.authMiddleWare,*/CourseCountroller.remove
 route.put("/editCourse",/*middleware.authMiddleWare,*/CourseCountroller.editCourse);
 route.get("/editCourse",/*middleware.authMiddleWare,*/CourseCountroller.editCourseGet);
 
-route.post("/getCourse",/*middleware.authMiddleWare,*/CourseCountroller.getCourse);
-route.get("/getCourse",/*middleware.authMiddleWare,*/CourseCountroller.CourseGet);
+route.get("/getCourse",/*middleware.authMiddleWare,*/CourseCountroller.getCourse);
 
-route.post("/registerCourse",middleware.authMiddleWare,CourseCountroller.registerCourse);
+route.post("/registerCourse",/*middleware.authMiddleWare,*/CourseCountroller.registerCourse);
+route.post("/assignCourse",/*middleware.authMiddleWare,*/CourseCountroller.assignCourse);
+route.post("/unassignCourse",/*middleware.authMiddleWare,*/CourseCountroller.unassignCourse);
+route.get("/assignedCourse",/*middleware.authMiddleWare,*/CourseCountroller.getAssignedCourses);
 route.post("/withdrawCourse",middleware.authMiddleWare,CourseCountroller.withdrawCourse);
-
+route.get("/getAllRegistered", CourseCountroller.getAllRegisteredCourses);
+route.get("/getAllRegisteredStudents", CourseCountroller.getAllRegisteredStudents);
 
 route.get("/Courses",/*middleware.authMiddleWare,*/CourseCountroller.registerCourseGet);
 
-route.get("/MyCourses",middleware.authMiddleWare,CourseCountroller.getMyCourses);
+route.get("/MyCourses",CourseCountroller.getMyCourses);
 
 route.put("/updateCourseRequest",/*middleware.authMiddleWare,*/CourseCountroller.reviewCoursesRegisterationRequests);
 route.get("/updateCourseRequest",/*middleware.authMiddleWare,*/CourseCountroller.getCoursesRegisterationRequests);
@@ -35,6 +38,7 @@ route.post('/uploadCourse/:course_id',upload.single('pdf'),CourseCountroller.upl
 route.get('/downloadCourse/:content_id', CourseCountroller.downloadCourseContent);
 
 route.get("/Courses/:course_id",middleware.authMiddleWare,CourseCountroller.getCourse);
+route.get("/getAllCourses",CourseCountroller.getAllCourses);
 
 route.post("/gradeCourse",middleware.authMiddleWare,CourseCountroller.gradeCourse);
 route.get("/gradeCourse",middleware.authMiddleWare,CourseCountroller.gradeCourseGet);

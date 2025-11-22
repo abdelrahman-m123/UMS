@@ -8,7 +8,7 @@ async function createCourseTable() {
     const q = `
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Course' AND xtype='U')
       create table Course (
-      course_id int primary key identity(1,1),
+      course_id int primary key VARCHAR(16) PRIMARY KEY,
       course_name varchar(64) unique,
       credit_hours int check (credit_hours in (2,3,4)),
       registered_students int default 0 ,
