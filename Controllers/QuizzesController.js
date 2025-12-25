@@ -3,6 +3,10 @@ const sql = require('mssql/msnodesqlv8')
 
 
 exports.addQuiz = async(req ,res)=>{
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
         try {
     const db = await connectToDB();
     const {course_id, quiz_title, google_form_url } = req.body;
@@ -26,6 +30,10 @@ exports.addQuizGet = (req,res)=>{
 }
 
 exports.getQuizGrade = async(req,res)=>{
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     console.log("###")
     const course_id = req.params.course_id;
 
@@ -36,10 +44,12 @@ exports.getQuizGrade = async(req,res)=>{
         request.input('course_id', sql.Int, course_id);
 
         const result = await request.query(`
-            SELECT q.quiz_id, q.quiz_title, q.google_form_url , gq.quiz_grade
-            FROM Quiz q join gradeQuiz gq on q.quiz_id = gq.quiz_id 
+            SELECT q.quiz_id, q.quiz_title, q.google_form_url , gq.quiz_grade, gq.stu_id, s.stu_email, s.stu_name
+            FROM Quiz q join GradeQuiz gq on q.quiz_id = gq.quiz_id join Student s on s.stu_id = gq.stu_id
             WHERE course_id = @course_id;
         `);
+        console.log(result.recordset);
+        console.log("im here");
 
         res.send(result.recordset);
     }catch(err){
@@ -49,6 +59,10 @@ exports.getQuizGrade = async(req,res)=>{
 }
 
 exports.getCourseQuiz = async(req,res)=>{
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     console.log("###")
     const course_id = req.params.course_id;
 
@@ -76,6 +90,10 @@ exports.getcourseQuizGet = (req,res)=>{
 
 
 exports.gradeQuiz = async(req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     try {
         const db = await connectToDB();
         const { quiz_id, stu_id, quiz_grade } = req.body;

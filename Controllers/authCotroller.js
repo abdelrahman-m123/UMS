@@ -228,13 +228,13 @@ exports.verifyCodePage = async (req,res)=>{
 }
 
 exports.add_users = async (req, res) => {
-    // const user_adder_role = req.userInfo.role;
-    // console.log(user_adder_role);
-    
-    // Authorization check - modify this condition as needed
-    if (true) { // Replace with your actual authorization logic
+    if(req.userInfo.role != 'admin')
+    {
+        return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin to assign courses"})
+    }
+    if (true) { 
         const db = await connectToDB();
-        const { users } = req.body; // Expect array of users
+        const { users } = req.body; 
 
         // Check if users is an array
         if (!Array.isArray(users) || users.length === 0) {
@@ -247,7 +247,6 @@ exports.add_users = async (req, res) => {
         for (let i = 0; i < users.length; i++) {
             const { username, email, password, role } = users[i];
 
-            // Validate each user
             const { error } = signupSchema.validate({ email, password });
             if (error) {
                 errors.push({ 
@@ -259,11 +258,9 @@ exports.add_users = async (req, res) => {
             }
 
             try {
-                // Check if user already exists in Student table
                 const studentCheck = await db.request()
                     .query(`SELECT * FROM Student WHERE stu_email = '${email}'`);
                 
-                // Check if user already exists in Staff table  
                 const staffCheck = await db.request()
                     .query(`SELECT * FROM Staff WHERE staff_email = '${email}'`);
 
@@ -330,31 +327,76 @@ exports.add_users = async (req, res) => {
 
 
 exports.getAllStaff = async (req, res) => {
+    if(req.userInfo.role != 'admin')
+    {
+        return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin to assign courses"})
+    }
     try {
         console.log("here")
         const db = await connectToDB();
         const search = req.query.search || "";
         const role = req.query.role || "";
+        
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        
         console.log(req.query);
 
-        let q = `SELECT staff_id, role, staff_name, staff_email, phone, contact_info, office_hours FROM Staff WHERE 1=1`;
-        const request = db.request();
+        let cteQuery = `
+        WITH StaffData AS (
+            SELECT 
+                staff_id, 
+                role, 
+                staff_name, 
+                staff_email, 
+                phone, 
+                contact_info, 
+                office_hours,
+                COUNT(*) OVER() as total_count
+            FROM Staff 
+            WHERE 1=1
+        `;
 
         // Add role filter if provided
         if (role && role.trim() !== '') {
-            q += ` AND role = '${role}'`;
+            cteQuery += ` AND role = '${role}'`;
         }
 
         // Add email/name search if provided
         if (search && search.trim() !== '') {
-            q += ` AND (staff_email LIKE'%${search}%' OR staff_name LIKE '%${search}%')`;
+            cteQuery += ` AND (staff_email LIKE '%${search}%' OR staff_name LIKE '%${search}%')`;
         }
 
-        // Add ordering
-        q += ` ORDER BY staff_name`;
+        cteQuery += `)
+        SELECT 
+            staff_id, 
+            role, 
+            staff_name, 
+            staff_email, 
+            phone, 
+            contact_info, 
+            office_hours,
+            total_count
+        FROM StaffData
+        ORDER BY staff_name
+        OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
 
-        const result = await request.query(q);
-        return res.status(200).json({ success: true, message: "Staff retrieved", staff: result.recordset });
+        const result = await db.request().query(cteQuery);
+        
+        const totalCount = result.recordset.length > 0 ? result.recordset[0].total_count : 0;
+
+        const staffData = result.recordset.map(staff => {
+            const { total_count, ...staffInfo } = staff;
+            return staffInfo;
+        });
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Staff retrieved", 
+            staff: staffData,
+            totalCount: totalCount 
+        });
 
     } catch (err) {
         console.error(err);
@@ -362,6 +404,10 @@ exports.getAllStaff = async (req, res) => {
     }
 }
 exports.editStaff = async (req, res) => {
+    if(req.userInfo.role != 'admin')
+    {
+        return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin to assign courses"})
+    }
     try {
         const db = await connectToDB();
         const { staff_id, staff_name, role, phone, contact_info, profile_link, office_hours } = req.body;

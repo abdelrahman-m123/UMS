@@ -4,7 +4,6 @@ async function createQuizTable() {
     
     const db = await connectToDB();
 
-
     const q = `
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Quiz' AND xtype='U')
     CREATE TABLE Quiz (
