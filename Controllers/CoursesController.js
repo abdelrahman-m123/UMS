@@ -4,10 +4,10 @@ const multer = require('multer');
 
 
 exports.addCourse =async (req,res)=>{
-    /*if(req.userInfo.role != 'admin' )
+    if(req.userInfo.role != 'admin' )
     {
         return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to add courses"})
-    }*/
+    }
     const db = await connectToDB();
     const{course_name, credit_hours } = req.body;
 
@@ -31,10 +31,10 @@ exports.addCourseGet = (req,res)=>{
 
 
 exports.removeCourse =async (req,res)=>{
-    /*if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor')
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor')
     {
         return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to remove courses"})
-    }*/
+    }
     const db = await connectToDB();
     const{course_id } = req.body;
 
@@ -54,7 +54,7 @@ exports.removeCourseGet = (req,res)=>{
 exports.editCourse = async (req, res) => {
     /*if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor')
     {
-        return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
     }*/
     const db = await connectToDB();
     const { course_id, new_course_name, new_credit_hours, new_max_registered_students } = req.body;
@@ -118,6 +118,10 @@ exports.editCourseGet = (req,res)=>{
 
 
 exports.getCourse = async (req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     const db = await connectToDB();
     const { course_id } = req.query;
 
@@ -195,10 +199,10 @@ exports.getCoursesRegisterationRequests = async(req,res)=>{
 
 
 exports.reviewCoursesRegisterationRequests = async (req,res)=>{
-    /*if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor')
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor')
     {
         return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to add courses"})
-    }*/
+    }
     const db = await connectToDB();
    const {course_id, stu_id , updated_status} = req.body;
    const q = `update RegisteredCourses set status = '${updated_status}' where course_id=${course_id} and stu_id = ${stu_id};`;
@@ -210,6 +214,10 @@ exports.reviewCoursesRegisterationRequests = async (req,res)=>{
 
 
 exports.registerCourse = async(req,res)=>{
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     const db = await connectToDB();
     // const stu_id = req.userInfo.userId;
     const {course_id, stu_id} = req.body;
@@ -227,6 +235,7 @@ exports.registerCourse = async(req,res)=>{
 
 
     await db.request().query(q);
+    
     return res.status(200).json({success:true, message:"Course is registered successfully , waiting for supervisor acceptance "}) 
 
 }
@@ -268,6 +277,10 @@ exports.withdrawCourseGet = (req,res)=>{
 
 
 exports.getMyCourses =async (req,res)=>{
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     const db = await connectToDB();
     const stu_id = req.query.stu_id;
     console.log(stu_id);
@@ -396,25 +409,76 @@ exports.gradeCourseGet = (req,res)=>{
 }
 
 exports.getAllCourses = async (req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     try {
         console.log("here")
         const db = await connectToDB();
-         const search = req.query.search || "";
-        console.log(req.params);
+        const search = req.query.search || "";
         
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
 
-        let q = `SELECT course_id, course_name, credit_hours, registered_students, max_registered_students FROM Course`;
+        console.log(req.params);
 
+        let cteQuery = `
+        WITH CourseData AS (
+            SELECT 
+                course_id, 
+                course_name, 
+                credit_hours, 
+                registered_students, 
+                max_registered_students,
+                COUNT(*) OVER() as total_count
+            FROM Course
+        `;
+
+        let whereClause = '';
+        
         if (search && search.trim() !== '') {
-            q += ` WHERE course_name LIKE @search`;
-            const request = await db.request();
-            request.input("search", sql.VarChar, `%${search}%`);
-            const result = await request.query(q);
-            return res.status(200).json({ success: true, message: "Courses retrieved", courses: result.recordset });
+            whereClause = ` WHERE course_name LIKE @search`;
+            cteQuery += whereClause;
         }
 
-        const result = await db.request().query(q);
-        return res.status(200).json({ success: true, message: "All courses retrieved", courses: result.recordset });
+        cteQuery += `)
+        SELECT 
+            course_id, 
+            course_name, 
+            credit_hours, 
+            registered_students, 
+            max_registered_students,
+            total_count
+        FROM CourseData
+        ORDER BY course_id
+        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+
+        const request = await db.request();
+
+        if (search && search.trim() !== '') {
+            request.input("search", sql.VarChar, `%${search}%`);
+        }
+
+        request.input("offset", sql.Int, offset);
+        request.input("limit", sql.Int, limit);
+
+        const result = await request.query(cteQuery);
+        
+        const totalCount = result.recordset.length > 0 ? result.recordset[0].total_count : 0;
+
+        const courses = result.recordset.map(course => {
+            const { total_count, ...courseData } = course;
+            return courseData;
+        });
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Courses retrieved", 
+            courses: courses,
+            totalCount: totalCount
+        });
 
     } catch (err) {
         console.error(err);
@@ -422,12 +486,101 @@ exports.getAllCourses = async (req, res) => {
     }
 }
 
-exports.getAllRegisteredCourses = async (req, res) => {
+exports.getAllOfferedCourses = async (req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     try {
+        console.log("here");
         const db = await connectToDB();
-        const { status, stu_id } = req.query;
+        const stu_id = req.query.stu_id || "";
+        const search = req.query.search || "";
+        
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
 
         let q = `
+        WITH CourseData AS (
+            SELECT 
+                c.course_id,
+                c.course_name,
+                c.credit_hours,
+                rc.status,
+                rc.grade,
+                COUNT(*) OVER() as total_count
+            FROM Course c
+            LEFT JOIN RegisteredCourses rc
+                ON c.course_id = rc.course_id
+                AND rc.stu_id = ${stu_id}
+        `;
+
+        let whereClause = '';
+        
+        if (search && search.trim() !== '') {
+            whereClause = ` WHERE c.course_name LIKE @search`;
+            q += whereClause;
+        }
+
+        q += `)
+        SELECT 
+            course_id,
+            course_name,
+            credit_hours,
+            status,
+            grade,
+            total_count
+        FROM CourseData
+        ORDER BY course_id
+        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+
+        const request = await db.request();
+
+        if (search && search.trim() !== '') {
+            request.input("search", sql.VarChar, `%${search}%`);
+        }
+
+        request.input("offset", sql.Int, offset);
+        request.input("limit", sql.Int, limit);
+
+        const result = await request.query(q);
+        
+        const totalCount = result.recordset.length > 0 ? result.recordset[0].total_count : 0;
+
+        const courses = result.recordset.map(course => {
+            const { total_count, ...courseData } = course;
+            return courseData;
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Courses retrieved",
+            courses: courses,
+            totalCount: totalCount,
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Error retrieving courses" });
+    }
+};
+
+exports.getAllRegisteredCourses = async (req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
+    try {
+        const db = await connectToDB();
+        const { status, stu_id, search } = req.query; // Added search parameter
+        
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        let cteQuery = `
+        WITH RegisteredCoursesCTE AS (
             SELECT 
                 rc.course_id,
                 rc.stu_id,
@@ -437,38 +590,80 @@ exports.getAllRegisteredCourses = async (req, res) => {
                 c.credit_hours,
                 c.registered_students,
                 c.max_registered_students,
-                s.stu_email
+                s.stu_email,
+                COUNT(*) OVER() as total_count
             FROM RegisteredCourses rc
             JOIN Course c ON rc.course_id = c.course_id
             JOIN Student s ON rc.stu_id = s.stu_id
         `;
 
+        let whereClause = '';
+        const conditions = [];
+
+        if (status && status.trim() !== '') {
+            conditions.push(`rc.status = @status`);
+        }
+
+        if (stu_id) {
+            conditions.push(`rc.stu_id = @stu_id`);
+        }
+
+        if (search && search.trim() !== '') {
+            conditions.push(`(c.course_name LIKE @search OR s.stu_email LIKE @search)`);
+        }
+
+        if (conditions.length > 0) {
+            whereClause = ` WHERE ${conditions.join(' AND ')}`;
+            cteQuery += whereClause;
+        }
+
+        cteQuery += `)
+        SELECT 
+            course_id,
+            stu_id,
+            status,
+            grade,
+            course_name,
+            credit_hours,
+            registered_students,
+            max_registered_students,
+            stu_email,
+            total_count
+        FROM RegisteredCoursesCTE
+        ORDER BY course_id
+        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+
         const request = await db.request();
 
-        // Filter by status if provided
         if (status && status.trim() !== '') {
-            q += ` WHERE rc.status = @status`;
             request.input("status", sql.VarChar, status);
         }
 
-        // Filter by student ID if provided
         if (stu_id) {
-            if (status && status.trim() !== '') {
-                q += ` AND rc.stu_id = @stu_id`;
-            } else {
-                q += ` WHERE rc.stu_id = @stu_id`;
-            }
             request.input("stu_id", sql.Int, stu_id);
         }
 
-        q += ` ORDER BY rc.course_id`;
+        if (search && search.trim() !== '') {
+            request.input("search", sql.VarChar, `%${search}%`);
+        }
 
-        const result = await request.query(q);
+        request.input("offset", sql.Int, offset);
+        request.input("limit", sql.Int, limit);
+
+        const result = await request.query(cteQuery);
         
+        const totalCount = result.recordset.length > 0 ? result.recordset[0].total_count : 0;
+
+        const courses = result.recordset.map(course => {
+            const { total_count, ...courseData } = course;
+            return courseData;
+        });
+
         return res.status(200).json({ 
             success: true, 
             message: "Registered courses retrieved", 
-            courses: result.recordset 
+            courses: courses,
+            totalCount: totalCount
         });
 
     } catch (err) {
@@ -477,12 +672,11 @@ exports.getAllRegisteredCourses = async (req, res) => {
     }
 }
 
-
 exports.assignCourse = async (req, res) => {
-    /*if(req.userInfo.role != 'admin')
+    if(req.userInfo.role != 'admin')
     {
         return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin to assign courses"})
-    }*/
+    }
     const db = await connectToDB();
     const { staff_id, course_id } = req.body;
 
@@ -550,6 +744,10 @@ exports.unassignCourseGet = (req, res) => {
 
 
 exports.getAssignedCourses = async (req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     const db = await connectToDB();
     const { staff_id } = req.query;
 
@@ -637,6 +835,10 @@ exports.getAssignedCoursesGet = (req, res) => {
 }
 
 exports.getAllRegisteredStudents = async (req, res) => {
+    if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA')
+    {
+        return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})
+    }
     try {
         const db = await connectToDB();
         const { course_id, status } = req.query;
@@ -693,3 +895,4 @@ exports.getAllRegisteredStudents = async (req, res) => {
         });
     }
 }
+

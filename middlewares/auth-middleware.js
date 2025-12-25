@@ -5,16 +5,16 @@ const jwt =require('jsonwebtoken');
 const authMiddleWare = (req,res,next)=>{
     console.log("all headers : ",req.headers)
     console.log("Cookies parsed:", req.cookies);
-    const cookieAuth = req.cookies.authorization;
+    const cookieAuth = req.headers.authorization;
     console.log(cookieAuth)
     if (!cookieAuth || !cookieAuth.startsWith('Bearer ')) {
       //return res.status(401).json({ success: false, message: 'Login first. Token missing or malformed in cookie.' });
-      return res.redirect('/api/auth/login');
+      return res.status(401).json({"success":"false",message:"Unauthorized"});
     }
   
     const token = cookieAuth.split(' ')[1];
     if(!token){
-        return res.status(401).json({"success":"false",message:"login first"})
+        return res.status(401).json({"success":"false",message:"login first"});
     }
 
     console.log(token); // prints the Bearer Token 

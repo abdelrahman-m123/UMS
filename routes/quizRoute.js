@@ -4,13 +4,13 @@ const middleware = require('../middlewares/auth-middleware')
 const route = express.Router()
 
 
-route.post('/addQuiz',QuizzesController.addQuiz)
+route.post('/addQuiz',middleware.authMiddleWare,QuizzesController.addQuiz)
 route.get('/addQuiz',middleware.authMiddleWare,QuizzesController.addQuizGet)
 
-route.get('/getCourseQuiz/:course_id',QuizzesController.getCourseQuiz)
-route.get('/getQuizGrades/:course_id',QuizzesController.getQuizGrade)
+route.get('/getCourseQuiz/:course_id',middleware.authMiddleWare, QuizzesController.getCourseQuiz)
+route.get('/getQuizGrades/:course_id',middleware.authMiddleWare,QuizzesController.getQuizGrade)
 
-route.post('/gradeQuiz',QuizzesController.gradeQuiz)
+route.post('/gradeQuiz',middleware.authMiddleWare,QuizzesController.gradeQuiz)
 route.get('/gradeQuiz',QuizzesController.gradeQuizGet)
 
 
