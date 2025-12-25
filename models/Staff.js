@@ -78,8 +78,12 @@ async function createStaffCoursesTable() {
     const q = `
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='StaffCourse' AND xtype='U')
       create table StaffCourse (
+
+
       staff_id int not null,
       course_id int not null,
+
+
       CONSTRAINT PK_staffCourse PRIMARY KEY (staff_id, course_id),
 
       CONSTRAINT FK_staffCourse_Course 

@@ -1,5 +1,5 @@
 const connectToDB = require('../db')
-const sql = require('mssql/msnodesqlv8')
+const sql = require('mssql')
 
 
 exports.addQuiz = async(req ,res)=>{

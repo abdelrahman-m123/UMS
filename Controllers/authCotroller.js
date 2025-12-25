@@ -228,7 +228,7 @@ exports.verifyCodePage = async (req,res)=>{
 }
 
 exports.add_users = async (req, res) => {
-    if(req.userInfo.role != 'admin')
+    if(req.userInfo.role != 'admin' )
     {
         return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin to assign courses"})
     }

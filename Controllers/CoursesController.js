@@ -1,5 +1,5 @@
 const connectToDB = require('../db')
-const sql = require("mssql/msnodesqlv8");
+const sql = require("mssql");
 const multer = require('multer');
 
 
@@ -277,6 +277,7 @@ exports.withdrawCourseGet = (req,res)=>{
 
 
 exports.getMyCourses =async (req,res)=>{
+
     if(req.userInfo.role != 'admin' && req.userInfo.role != 'Doctor' && req.userInfo.role != 'TA' && req.userInfo.role != 'student')
     {
         return res.status(401).json({sucess:false, message:"Unauthorized, You have to be admin or doctor to edit courses"})

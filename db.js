@@ -1,20 +1,25 @@
 const sql = require('mssql/msnodesqlv8');
 
-
 const config = {
-  connectionString: 'Driver={ODBC Driver 17 for SQL Server};Server=ABO7EDAR;Database=UMS;Trusted_Connection=Yes;Encrypt=no;TrustServerCertificate=yes;',
-  driver: 'msnodesqlv8'
+  user: 'ums_user',
+  password: 'ums1234',
+  server: 'localhost\\SQLEXPRESS',
+  database: 'University_Management_System_DB',
+  options: {
+    encrypt: false,
+    trustServerCertificate: true
+  }
 };
 
 async function connectToDB() {
-  try {
-    let pool = await sql.connect(config);
-    console.log('✅ MSSQL Connected');
-    return pool;
-  } catch (err) {
-    console.error('❌ DB Connection Error:', err);
-    throw err;
-  }
+    try {
+        const pool = await sql.connect(config);
+        console.log('✅ MSSQL Connected');
+        return pool;
+    } catch (err) {
+        console.error('❌ DB Connection Error:', err.message || err);
+        throw err;
+    }
 }
 
 module.exports = connectToDB;
