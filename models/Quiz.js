@@ -11,6 +11,8 @@ async function createQuizTable() {
         course_id INT NOT NULL,
         quiz_title NVARCHAR(100),
         google_form_url NVARCHAR(500),
+        max_grade int not null constraint df_quiz_maxGrade default 10 check (max_grade > 0),
+        
         FOREIGN KEY (course_id) REFERENCES Course(course_id)
     );`;
     await db.request().query(q);   
@@ -29,6 +31,7 @@ async function createGradeQuizTable() {
         quiz_id INT NOT NULL,
         stu_id INT NOT NULL,
         quiz_grade INT ,
+
 
         CONSTRAINT PK_GradeQuiz PRIMARY KEY (quiz_id, stu_id),
 
