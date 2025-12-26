@@ -39,8 +39,18 @@ async function createStaffAttributesTable() {
       data_type VARCHAR(20) CHECK (data_type in ('string' , 'integer'  , 'decimal' , 'boolean'))
       );
 
+    INSERT INTO StaffAttributes (attribute_name, data_type)
+      VALUES ('rating', 'integer');
+    INSERT INTO StaffAttributes (attribute_name, data_type)
+      VALUES ('numberOfResearchPapers', 'integer');
+    INSERT INTO StaffAttributes (attribute_name, data_type)
+    VALUES ('specialization', 'string');
+    INSERT INTO StaffAttributes (attribute_name, data_type)
+    VALUES ('remoteWork', 'boolean');
+  
     `;
     await db.request().query(q);
+
 }
 
 

@@ -11,11 +11,11 @@ const middleware = require("../middlewares/auth-middleware");
 
 //router.post('/addUser',middleware.authMiddleWare  ,authController.add_users); // abdo
 router.post('/addUser',middleware.authMiddleWare  ,authController.add_user); // elfeel
-router.put('/editStaff',middleware.authMiddleWare  ,authController.editStaff);
+//router.put('/editStaff',middleware.authMiddleWare  ,authController.editStaff);
 
 router.post('/login',authController.login);
 router.get("/login",authController.login_get);
-router.get("/getAllStaff",middleware.authMiddleWare,authController.getAllStaff);
+//router.get("/getAllStaff",middleware.authMiddleWare,authController.getAllStaff);
 
 router.post('/login',authController.login);
 router.get("/login",authController.login_get);

@@ -11,9 +11,11 @@ const { json } = require('body-parser');
 
 
 exports.add_user = async (req,res)=>{
-//    user_adder_role = req.userInfo.role;
-//    console.log(user_adder_role)
-   if (true){
+//  user_adder_role = req.userInfo.role;
+//  console.log(user_adder_role)
+
+
+   if (req.userInfo.role == 'super_admin' || req.userInfo.role == 'admin'){
    
    const db = await connectToDB();
    const {username,email,password,role} = req.body;
@@ -43,7 +45,7 @@ exports.add_user = async (req,res)=>{
 }
    }
 else{
-    return res.status(401).json({"success":false,message: "Un authorized , U have to be super admin"});
+    return res.status(401).json({"success":false,message: "Un authorized , U have to be an admin"});
 }
 
 }
@@ -325,7 +327,7 @@ exports.add_users = async (req, res) => {
 };
 
 
-
+/*
 exports.getAllStaff = async (req, res) => {
     if(req.userInfo.role != 'admin')
     {
@@ -403,75 +405,6 @@ exports.getAllStaff = async (req, res) => {
         return res.status(500).json({ success: false, message: "Error retrieving staff" });
     }
 }
-exports.editStaff = async (req, res) => {
-    if(req.userInfo.role != 'admin')
-    {
-        return res.status(404).json({sucess:false, message:"Unauthorized, You have to be admin to assign courses"})
-    }
-    try {
-        const db = await connectToDB();
-        const { staff_id, staff_name, role, phone, contact_info, profile_link, office_hours } = req.body;
+*/
 
-        // Check if staff exists
-        const staffCheck = await db.request().query(`SELECT * FROM Staff WHERE staff_id = ${staff_id};`);
-        if (staffCheck.recordset.length <= 0) {
-            return res.status(404).json({ success: false, message: "Staff member not found" });
-        }
 
-        // Validate required fields
-        if (!staff_name || !role) {
-            return res.status(400).json({ success: false, message: "Staff name and role are required" });
-        }
-
-        // Validate role
-        const validRoles = ['TA', 'Doctor', 'admin', 'super_admin'];
-        if (!validRoles.includes(role)) {
-            return res.status(400).json({ success: false, message: "Invalid role. Must be TA, Doctor, admin, or super_admin" });
-        }
-
-        // Build the update query dynamically based on provided fields
-        let updateFields = [];
-
-        if (staff_name) {
-            updateFields.push(`staff_name = '${staff_name}'`);
-        }
-        
-        if (role) {
-            updateFields.push(`role = '${role}'`);
-        }
-        
-        if (phone !== undefined) {
-            updateFields.push(`phone = '${phone}'`);
-        }
-        
-        if (contact_info !== undefined) {
-            updateFields.push(`contact_info = '${contact_info}'`);
-        }
-        
-        if (profile_link !== undefined) {
-            updateFields.push(`profile_link = '${profile_link}'`);
-        }
-        
-        if (office_hours !== undefined) {
-            updateFields.push(`office_hours = '${office_hours}'`);
-        }
-
-        if (updateFields.length === 0) {
-            return res.status(400).json({ success: false, message: "No fields to update" });
-        }
-
-        const q = `UPDATE Staff SET ${updateFields.join(', ')} WHERE staff_id = ${staff_id}`;
-
-        await db.request().query(q);
-
-        return res.status(200).json({ success: true, message: "Staff information updated successfully" });
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({ success: false, message: "Error while updating staff information" });
-    }
-}
-
-exports.editStaffGet = (req, res) => {
-    res.render('editStaffPage');
-}

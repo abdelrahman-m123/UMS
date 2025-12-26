@@ -42,6 +42,10 @@ const PORT = process.env.PORT || 3001 ;
     await StudentTable.createStudentTable();
     await StaffTable.createStaffTable();
     await StaffTable.createStaffCoursesTable();
+    await StaffTable.createStaffAttributesTable();
+    await StaffTable.createStaffAttributeValuesTable();
+
+
 
     await CourseTable.createCourseTable();
     await CourseTable.registerCourseTable();
@@ -51,6 +55,7 @@ const PORT = process.env.PORT || 3001 ;
     await QuizTable.createGradeQuizTable();
 
     await AnnouncementTable.createAnnouncementTable();
+
 
 
 

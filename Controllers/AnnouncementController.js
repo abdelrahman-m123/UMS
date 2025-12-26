@@ -9,6 +9,7 @@ exports.CreateAnnouncement = async(req,res)=>{
        const db = await connectToDB();
        const {title, content} = req.body;
        const author_role = req.userInfo.role;
+       // const params
 
        const allowedRoles = ['admin', 'Doctor', 'TA', 'super_admin'];
 
@@ -34,7 +35,7 @@ exports.CreateAnnouncement = async(req,res)=>{
     return res.status(201).json({success:true, message:`${title} annoucement has been added successfully`})
 
     }else{
-    return res.status(403).json({success:true, message:`Unauthorized`})
+    return res.status(403).json({success:false, message:`Unauthorized`})
     }
 
 
@@ -89,7 +90,7 @@ exports.EditAnnouncement = async(req,res)=>{
     return res.status(201).json({success:true, message:`${title} annoucement has been updated successfully`})
 
     }else{
-    return res.status(403).json({success:true, message:`Unauthorized. U are not the author of this announcement`})
+    return res.status(403).json({success:false, message:`Unauthorized. U are not the author of this announcement`})
     }
 
 
@@ -124,7 +125,6 @@ exports.RemoveAnnouncement = async(req,res)=>{
         const result = await s_request.query(getAnnQ);
         console.log(result.recordset[0])
    
-       //return 
 
     const author_id = req.userInfo.userId;
 
@@ -139,14 +139,14 @@ exports.RemoveAnnouncement = async(req,res)=>{
     return res.status(200).json({success:true, message:` annoucement has been deleted successfully`})
 
     }else{
-    return res.status(403).json({success:true, message:`Unauthorized. U are not the author of this announcement`})
+    return res.status(403).json({success:false, message:`Unauthorized. U are not the author of this announcement`})
     }
 
 
     }
     catch(err){
         console.log(err)
-        res.status(500).json({success:false, message:"error while deleting the announcement !!"})
+        res.status(500).json({success:fa4lse, message:"error while deleting the announcement !!"})
     }
 
 }
