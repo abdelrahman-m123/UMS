@@ -53,6 +53,10 @@ const PORT = process.env.PORT || 3001 ;
 
     await CourseTable.createCourseTable();
     await CourseTable.registerCourseTable();
+    await CourseTable.registerCourseAttributTable();
+    await CourseTable.registerCourseAttributeValuesTable();
+
+
     await CourseTable.CourseContentTable();
 
     await QuizTable.createQuizTable();

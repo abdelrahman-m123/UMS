@@ -29,6 +29,8 @@ async function createCourseAttributeTable(){
       attribute_name VARCHAR(50) NOT NULL UNIQUE,
       data_type VARCHAR(20) CHECK (data_type in ('string' , 'integer' , 'decimal' , 'boolean'))
       
+
+
      );
   `;
   await db.request().query(q);
@@ -39,6 +41,7 @@ async function createCourseAttributeValuesTable(){
 
   const q = `IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='CourseAttributeValues' AND xtype='U')
              create table CourseAttributeValues(
+
                course_id int not null ,
                attribute_id int not null,
                value_string VARCHAR(255) NULL,
@@ -59,6 +62,8 @@ async function createCourseAttributeValuesTable(){
 
 
 
+////
+
 
 async function registerCourseTable() {
     
@@ -70,8 +75,6 @@ async function registerCourseTable() {
 
       course_id int not null,
       stu_id int not null,
-
-
 
       status VARCHAR(10) 
       CONSTRAINT CK_Status CHECK (status IN ('accepted', 'rejected', 'pending'))
@@ -105,6 +108,18 @@ async function registerCourseAttributTable() {
       data_type VARCHAR(20) CHECK (data_type in ('string' , 'integer' , 'decimal' , 'boolean'))
       
      );
+
+        IF NOT EXISTS (SELECT 1 FROM RegisteredCourseAttribute WHERE attribute_name = 'midterm_grade')  
+    INSERT INTO RegisteredCourseAttribute (attribute_name, data_type)
+      VALUES ('midterm_grade', 'integer');  
+
+    IF NOT EXISTS (SELECT 1 FROM RegisteredCourseAttribute WHERE attribute_name = 'classwork_grade')  
+    INSERT INTO RegisteredCourseAttribute (attribute_name, data_type)
+      VALUES ('classwork_grade', 'integer');
+    
+    IF NOT EXISTS (SELECT 1 FROM RegisteredCourseAttribute WHERE attribute_name = 'quizes_grade')  
+    INSERT INTO RegisteredCourseAttribute (attribute_name, data_type)
+      VALUES ('quizes_grade', 'integer');
   `;
     await db.request().query(q);   
 
@@ -134,7 +149,7 @@ async function registerCourseAttributeValuesTable() {
           
         
         FOREIGN KEY (attribute_id)
-          REFERENCES RegistrationAttribute(attribute_id)
+          REFERENCES RegisteredCourseAttribute(attribute_id)
         
          
       );

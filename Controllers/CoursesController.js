@@ -897,3 +897,125 @@ exports.getAllRegisteredStudents = async (req, res) => {
     }
 }
 
+
+
+///
+
+exports.addClassworkGrades = async(req,res)=>{
+
+    try{
+
+    const db = await connectToDB();
+    const userRole = req.userInfo.role;
+    if(userRole != 'Doctor' && userRole !='admin'){
+        return res.status(403).json({ 
+            success: false, 
+            message: "Unauthorized" 
+        });
+    }
+
+    const {course_id , stu_id} = req.params;
+    const attributes = req.body;
+
+    const courseCheck = await db.request()
+      .input('course_id', sql.Int, course_id)
+      .query('SELECT course_id FROM Course WHERE course_id = @course_id');
+
+    if (courseCheck.recordset.length === 0) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+
+    const stuCheck = await db.request()
+      .input('stu_id', sql.Int, stu_id)
+      .query('SELECT stu_id FROM Student WHERE stu_id = @stu_id');
+
+    if (stuCheck.recordset.length === 0) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    for(const [attrName, attrValue] of Object.entries(attributes)){
+
+        const attrRes = await db.request()
+        .input('attribute_name', sql.VarChar, attrName)
+        .query(`select attribute_id, data_type from RegisteredCourseAttribute where attribute_name = @attribute_name`)
+
+        if(attrRes.recordset.length == 0 ) continue;
+
+        const { attribute_id, data_type } = attrRes.recordset[0];
+
+
+      let valueColumns = {
+        value_string: null,
+        value_int: null,
+        value_decimal: null,
+        value_boolean: null
+      };
+
+
+      switch (data_type) {
+        case 'string':
+          valueColumns.value_string = attrValue;
+          break;
+        case 'integer':
+          valueColumns.value_int = attrValue;
+          break;
+        case 'decimal':
+          valueColumns.value_decimal = attrValue;
+          break;
+        case 'boolean':
+          valueColumns.value_boolean = attrValue;
+          break;
+      }
+
+      const request = db.request();
+      request.input('course_id', sql.Int, course_id);
+      request.input('stu_id', sql.Int, stu_id);
+      request.input('attribute_id', sql.Int, attribute_id);
+      request.input('value_string', sql.VarChar, valueColumns.value_string);
+      request.input('value_int', sql.Int, valueColumns.value_int);
+      request.input('value_decimal', sql.Decimal(10,2), valueColumns.value_decimal);
+      request.input('value_boolean', sql.Bit, valueColumns.value_boolean); 
+      
+
+
+      await request.query(`
+        IF EXISTS (
+          SELECT 1 FROM RegisteredCourseAttributeValue
+          WHERE stu_id = @stu_id and course_id = @course_id AND attribute_id = @attribute_id
+        )
+        update RegisteredCourseAttributeValue
+        set
+          value_string = @value_string,
+          value_int = @value_int,
+          value_decimal = @value_decimal,
+          value_boolean = @value_boolean
+
+        WHERE stu_id = @stu_id and course_id = @course_id AND attribute_id = @attribute_id
+        ELSE
+        INSERT INTO RegisteredCourseAttributeValue
+        (stu_id, course_id, attribute_id, value_string, value_int, value_decimal, value_boolean)
+        VALUES
+        (@stu_id,@course_id,  @attribute_id, @value_string, @value_int, @value_decimal, @value_boolean)
+      `);
+
+      
+    }      
+
+
+        
+    return res.status(200).json({
+      success: true,
+      message: 'Student attributes updated successfully (EAV)'
+    });
+
+  }
+
+    catch (err) {
+            console.error(err);
+            return res.status(500).json({ 
+                success: false, 
+                message: "Error retrieving adding grades to the course" 
+            });
+        }
+
+}

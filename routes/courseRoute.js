@@ -44,4 +44,9 @@ route.get("/getAllCourses",middleware.authMiddleWare, CourseCountroller.getAllCo
 route.post("/gradeCourse",middleware.authMiddleWare,CourseCountroller.gradeCourse);
 route.get("/gradeCourse",middleware.authMiddleWare,CourseCountroller.gradeCourseGet);
 
+
+// 
+route.post('/addClassworkGrades/:course_id/:stu_id', middleware.authMiddleWare, CourseCountroller.addClassworkGrades)
+
+
 module.exports = route;
