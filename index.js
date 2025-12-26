@@ -55,6 +55,8 @@ const PORT = process.env.PORT || 3001 ;
     await QuizTable.createGradeQuizTable();
 
     await AnnouncementTable.createAnnouncementTable();
+    await AnnouncementTable.createCommentTable();
+
 
 
 

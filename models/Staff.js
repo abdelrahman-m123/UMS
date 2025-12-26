@@ -39,12 +39,20 @@ async function createStaffAttributesTable() {
       data_type VARCHAR(20) CHECK (data_type in ('string' , 'integer'  , 'decimal' , 'boolean'))
       );
 
+    IF NOT EXISTS (SELECT 1 FROM StaffAttributes WHERE attribute_name = 'rating')
     INSERT INTO StaffAttributes (attribute_name, data_type)
       VALUES ('rating', 'integer');
+
+
+    IF NOT EXISTS (SELECT 1 FROM StaffAttributes WHERE attribute_name = 'numberOfResearchPapers')  
     INSERT INTO StaffAttributes (attribute_name, data_type)
       VALUES ('numberOfResearchPapers', 'integer');
+    
+    IF NOT EXISTS (SELECT 1 FROM StaffAttributes WHERE attribute_name = 'specialization')  
     INSERT INTO StaffAttributes (attribute_name, data_type)
     VALUES ('specialization', 'string');
+
+    IF NOT EXISTS (SELECT 1 FROM StaffAttributes WHERE attribute_name = 'remoteWork')
     INSERT INTO StaffAttributes (attribute_name, data_type)
     VALUES ('remoteWork', 'boolean');
   
