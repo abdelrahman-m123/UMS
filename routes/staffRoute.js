@@ -10,5 +10,6 @@ route.put('/editStaff/:staff_id',middleware.authMiddleWare, StaffConroller.editS
 
 route.delete('/deleteStaff/:staff_id',middleware.authMiddleWare, StaffConroller.RemoveStaff)
 
+route.post('/addStudentInfo/:stu_id',middleware.authMiddleWare, StaffConroller.addStuInfo);
 
 module.exports = route;

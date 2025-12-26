@@ -35,6 +35,23 @@ async function createStudentAttributesTable() {
       attribute_name VARCHAR(50) NOT NULL UNIQUE,
       data_type VARCHAR(20) CHECK (data_type in ('string' , 'integer'  , 'decimal' , 'boolean'))
       );
+      
+    IF NOT EXISTS (SELECT 1 FROM StudentAttributes WHERE attribute_name = 'GPA')  
+    INSERT INTO StudentAttributes (attribute_name, data_type)
+      VALUES ('GPA', 'decimal');
+
+    IF NOT EXISTS (SELECT 1 FROM StudentAttributes WHERE attribute_name = 'academicWarning')  
+    INSERT INTO StudentAttributes (attribute_name, data_type)
+      VALUES ('academicWarning', 'boolean');
+
+    IF NOT EXISTS (SELECT 1 FROM StudentAttributes WHERE attribute_name = 'housingType')  
+    INSERT INTO StudentAttributes (attribute_name, data_type)
+      VALUES ('housingType', 'string');
+
+    IF NOT EXISTS (SELECT 1 FROM StudentAttributes WHERE attribute_name = 'scolarshipStatus')  
+    INSERT INTO StudentAttributes (attribute_name, data_type)
+      VALUES ('scolarshipStatus', 'boolean');  
+    
 
     `;
     await db.request().query(q);
@@ -57,8 +74,8 @@ async function createStudentAttributeValuesTable() {
         value_boolean BIT NULL,
 
         PRIMARY KEY (stu_id, attribute_id),
-        FOREIGN KEY (stu_id) REFERENCES Student(stu_id),
-        FOREIGN KEY (attribute_id) REFERENCES StudentAttributes(attribute_id)
+        FOREIGN KEY (stu_id) REFERENCES Student(stu_id) on delete cascade,
+        FOREIGN KEY (attribute_id) REFERENCES StudentAttributes(attribute_id) on delete cascade
     );
     `;
     await db.request().query(q);

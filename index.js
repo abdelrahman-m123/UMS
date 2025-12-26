@@ -40,6 +40,10 @@ const PORT = process.env.PORT || 3001 ;
   try {
     const db = await connectToDB();
     await StudentTable.createStudentTable();
+    await StudentTable.createStudentAttributesTable();
+    await StudentTable.createStudentAttributeValuesTable();
+
+
     await StaffTable.createStaffTable();
     await StaffTable.createStaffCoursesTable();
     await StaffTable.createStaffAttributesTable();

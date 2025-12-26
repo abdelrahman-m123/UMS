@@ -237,3 +237,100 @@ exports.RemoveStaff = async (req,res)=>{
 
 
 }
+
+exports.addStuInfo = async (req, res) => {
+  try {
+    if(req.userInfo.role !== 'admin' && req.userInfo.role !='super_admin'){
+      return res.status(403).json({ success: false, message: 'Unauthorized !' });
+    }
+    const db = await connectToDB();
+    const { stu_id } = req.params;
+    const attributes = req.body;
+
+
+    const stuCheck = await db.request()
+      .input('stu_id', sql.Int, stu_id)
+      .query('SELECT stu_id FROM Student WHERE stu_id = @stu_id');
+
+    if (stuCheck.recordset.length === 0) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+
+    for (const [attrName, attrValue] of Object.entries(attributes)) {
+
+      const attrResult = await db.request()
+        .input('name', sql.VarChar, attrName)
+        .query(`
+          SELECT attribute_id, data_type 
+          FROM StudentAttributes 
+          WHERE attribute_name = @name
+        `);
+
+      if (attrResult.recordset.length === 0) continue;
+
+      const { attribute_id, data_type } = attrResult.recordset[0];
+
+      let valueColumns = {
+        value_string: null,
+        value_int: null,
+        value_decimal: null,
+        value_boolean: null
+      };
+
+      switch (data_type) {
+        case 'string':
+          valueColumns.value_string = attrValue;
+          break;
+        case 'integer':
+          valueColumns.value_int = attrValue;
+          break;
+        case 'decimal':
+          valueColumns.value_decimal = attrValue;
+          break;
+        case 'boolean':
+          valueColumns.value_boolean = attrValue;
+          break;
+      }
+
+      const request = db.request();
+      request.input('stu_id', sql.Int, stu_id);
+      request.input('attribute_id', sql.Int, attribute_id);
+      request.input('value_string', sql.VarChar, valueColumns.value_string);
+      request.input('value_int', sql.Int, valueColumns.value_int);
+      request.input('value_decimal', sql.Decimal(10,2), valueColumns.value_decimal);
+      request.input('value_boolean', sql.Bit, valueColumns.value_boolean);
+
+      await request.query(`
+        IF EXISTS (
+          SELECT 1 FROM StudentAttributeValues
+          WHERE stu_id = @stu_id AND attribute_id = @attribute_id
+        )
+        UPDATE StudentAttributeValues
+        SET
+          value_string = @value_string,
+          value_int = @value_int,
+          value_decimal = @value_decimal,
+          value_boolean = @value_boolean
+        WHERE stu_id = @stu_id AND attribute_id = @attribute_id
+        ELSE
+        INSERT INTO StudentAttributeValues
+        (stu_id, attribute_id, value_string, value_int, value_decimal, value_boolean)
+        VALUES
+        (@stu_id, @attribute_id, @value_string, @value_int, @value_decimal, @value_boolean)
+      `);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Student attributes updated successfully (EAV)'
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Error while updating student attributes'
+    });
+  }
+};

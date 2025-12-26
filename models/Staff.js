@@ -78,8 +78,8 @@ async function createStaffAttributeValuesTable() {
         value_boolean BIT NULL,
 
         PRIMARY KEY (staff_id, attribute_id),
-        FOREIGN KEY (staff_id) REFERENCES Staff(staff_id),
-        FOREIGN KEY (attribute_id) REFERENCES StaffAttributes(attribute_id)
+        FOREIGN KEY (staff_id) REFERENCES Staff(staff_id) on delete cascade,
+        FOREIGN KEY (attribute_id) REFERENCES StaffAttributes(attribute_id) on delete cascade
     );
     `;
     await db.request().query(q);
