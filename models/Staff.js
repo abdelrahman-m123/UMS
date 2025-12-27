@@ -43,7 +43,6 @@ async function createStaffAttributesTable() {
     INSERT INTO StaffAttributes (attribute_name, data_type)
       VALUES ('rating', 'integer');
 
-
     IF NOT EXISTS (SELECT 1 FROM StaffAttributes WHERE attribute_name = 'numberOfResearchPapers')  
     INSERT INTO StaffAttributes (attribute_name, data_type)
       VALUES ('numberOfResearchPapers', 'integer');

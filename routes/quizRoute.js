@@ -13,6 +13,8 @@ route.get('/getQuizGrades/:course_id',middleware.authMiddleWare,QuizzesControlle
 route.post('/gradeQuiz',middleware.authMiddleWare,QuizzesController.gradeQuiz)
 route.get('/gradeQuiz',QuizzesController.gradeQuizGet)
 
+route.post('/publishQuiz/:quiz_id',middleware.authMiddleWare, QuizzesController.publishQuizWithSchedule)
+route.get('/myCalender',middleware.authMiddleWare, QuizzesController.getCalenderQuizes)
 
 
 module.exports = route;

@@ -156,3 +156,177 @@ exports.gradeQuiz = async(req, res) => {
 exports.gradeQuizGet = (req,res)=>{
     res.render('gradequizPage')
 }
+
+
+
+
+exports.publishQuizWithSchedule = async (req, res) => {
+  try {
+    const db = await connectToDB();
+    const { quiz_id } = req.params;
+    const { open_date, close_date, is_visible } = req.body;
+
+
+
+    const quizCheck = await db.request()
+      .input('quiz_id', sql.Int, quiz_id)
+      .query(`SELECT quiz_id FROM Quiz WHERE quiz_id = @quiz_id`);
+
+    if (quizCheck.recordset.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quiz not found'
+      });
+    }
+
+
+
+    const attributes = {
+      open_date,
+      close_date,
+      is_visible
+    };
+
+    for (const [attrName, attrValue] of Object.entries(attributes)) {
+      if (attrValue === undefined || attrValue === null) continue;
+
+
+
+      const attrRes = await db.request()
+        .input('attribute_name', sql.VarChar, attrName)
+        .query(`
+          SELECT attribute_id, data_type
+          FROM QuizAttribute
+          WHERE attribute_name = @attribute_name
+        `);
+
+      if (attrRes.recordset.length === 0) continue;
+
+      const { attribute_id, data_type } = attrRes.recordset[0];
+
+
+
+      const values = {
+        value_int: null,
+        value_decimal: null,
+        value_string: null,
+        value_boolean: null,
+        value_datetime: null
+      };
+
+
+
+      switch (data_type) {
+        case 'integer':
+          values.value_int = attrValue;
+          break;
+        case 'decimal':
+          values.value_decimal = attrValue;
+          break;
+        case 'boolean':
+          values.value_boolean = attrValue;
+          break;
+        case 'datetime':
+          values.value_datetime = attrValue;
+          break;
+        default:
+          values.value_string = attrValue;
+      }
+
+
+
+      const r = db.request();
+      r.input('quiz_id', sql.Int, quiz_id);
+      r.input('stu_id', sql.Int, 0);
+      r.input('attribute_id', sql.Int, attribute_id);
+
+      r.input('value_int', sql.Int, values.value_int);
+      r.input('value_decimal', sql.Decimal(10, 2), values.value_decimal);
+      r.input('value_string', sql.VarChar, values.value_string);
+      r.input('value_boolean', sql.Bit, values.value_boolean);
+      r.input('value_datetime', sql.DateTime, values.value_datetime);
+
+      await r.query(`
+        IF EXISTS (
+          SELECT 1 FROM QuizAttributeValue
+          WHERE quiz_id = @quiz_id
+            AND stu_id = @stu_id
+            AND attribute_id = @attribute_id
+        )
+        UPDATE QuizAttributeValue
+        SET
+          value_int = @value_int,
+          value_decimal = @value_decimal,
+          value_string = @value_string,
+          value_boolean = @value_boolean,
+          value_datetime = @value_datetime
+        WHERE quiz_id = @quiz_id
+          AND stu_id = @stu_id
+          AND attribute_id = @attribute_id
+        ELSE
+        INSERT INTO QuizAttributeValue
+        (
+          quiz_id, stu_id, attribute_id,
+          value_int, value_decimal, value_string,
+          value_boolean, value_datetime
+        )
+        VALUES
+        (
+          @quiz_id, @stu_id, @attribute_id,
+          @value_int, @value_decimal, @value_string,
+          @value_boolean, @value_datetime
+        )
+      `);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Quiz published successfully',
+      schedule: {
+        open_date,
+        close_date,
+        is_visible
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Error publishing quiz'
+    });
+  }
+};
+
+
+exports.getCalenderQuizes = async(req,res)=>{
+
+    try{
+        const db = await connectToDB();
+        const stu_id = req.userInfo.userId;
+
+        const stu_check = await db.request();
+        const stu_result = await stu_check.input('stu_id',sql.Int, stu_id)
+        .query(`select stu_name from Student where stu_id= @stu_id;`);
+
+        if(stu_result.recordset.length == 0){
+            return res.status(404).json({success:false, message:"student not found !!"})
+        }
+
+        const request = await db.request();
+        const result = await request.input('stu_id', sql.Int , stu_id)
+        .query(`select c.course_name,q.quiz_id, q.quiz_title, q.google_form_url from RegisteredCourses rc 
+            join Course c on c.course_id = rc.course_id 
+            join Quiz q on q.course_id = rc.course_id where stu_id=@stu_id ;`);
+        
+        console.log(result.recordset)
+        return res.status(200).json({success:true, result:result.recordset})
+
+
+
+     }catch(err){
+        console.log(err)
+        return res.status(500).json({success:false, message:"error while getting your quizes calender"})
+    }
+
+}

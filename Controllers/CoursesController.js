@@ -1019,3 +1019,78 @@ exports.addClassworkGrades = async(req,res)=>{
         }
 
 }
+
+
+exports.getCourseClassworkGrades = async(req,res)=>{
+   
+    try{
+        const db = await connectToDB();
+        const {course_id,stu_id} = req.params;
+
+
+    const courseCheck = await db.request()
+      .input('course_id', sql.Int, course_id)
+      .query('SELECT course_id FROM Course WHERE course_id = @course_id');
+
+    if (courseCheck.recordset.length === 0) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+
+    const stuCheck = await db.request()
+      .input('stu_id', sql.Int, stu_id)
+      .query('SELECT stu_id FROM Student WHERE stu_id = @stu_id');
+
+    if (stuCheck.recordset.length === 0) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const gradesRequest = await db.request()
+      .input('course_id', sql.Int, course_id)
+      .input('stu_id', sql.Int, stu_id)
+
+      .query(`
+    SELECT 
+        rca.attribute_name,
+        rcav.value_int,
+        rcav.value_decimal,
+        rcav.value_string,
+        rcav.value_boolean,
+        rc.grade
+    FROM RegisteredCourseAttributeValue rcav
+    INNER JOIN RegisteredCourseAttribute rca
+        ON rcav.attribute_id = rca.attribute_id
+    INNER JOIN RegisteredCourses rc
+        ON rcav.course_id = rc.course_id 
+        AND rcav.stu_id = rc.stu_id
+    WHERE rcav.course_id = @course_id
+      AND rcav.stu_id = @stu_id;
+
+      `);
+
+    const grades = {};
+    gradesRequest.recordset.forEach(r => {
+        if (r.value_int !== null) grades[r.attribute_name] = r.value_int;
+        else if (r.value_decimal !== null) grades[r.attribute_name] = r.value_decimal;
+        else if (r.value_string !== null) grades[r.attribute_name] = r.value_string;
+        else if (r.value_boolean !== null) grades[r.attribute_name] = r.value_boolean;
+    });
+
+    grades["final_grade"] = gradesRequest.recordset[0]?.grade || "-";
+
+    res.status(200).json({
+        success: true,
+        student: { stu_id },
+        course: { course_id },
+        grades
+    });
+
+}
+  catch (err) {
+            console.error(err);
+            return res.status(500).json({ 
+                success: false, 
+                message: "Error retrieving getting  grades of the course" 
+            });
+        }
+
+}

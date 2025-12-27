@@ -109,7 +109,7 @@ async function registerCourseAttributTable() {
       
      );
 
-        IF NOT EXISTS (SELECT 1 FROM RegisteredCourseAttribute WHERE attribute_name = 'midterm_grade')  
+    IF NOT EXISTS (SELECT 1 FROM RegisteredCourseAttribute WHERE attribute_name = 'midterm_grade')  
     INSERT INTO RegisteredCourseAttribute (attribute_name, data_type)
       VALUES ('midterm_grade', 'integer');  
 
